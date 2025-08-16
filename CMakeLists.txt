@@ -1,4 +1,2 @@
 zephyr_library()
-zephyr_library_sources(
-    caps_status.c
-)
+zephyr_library_sources(src/caps_status.c)
