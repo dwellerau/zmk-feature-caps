@@ -1,0 +1,4 @@
+config ZMK_DISPLAY_WIDGET_CAPS_STATUS
+    bool "Caps Lock / Caps Word OLED indicator"
+    depends on ZMK_DISPLAY
+    default y
