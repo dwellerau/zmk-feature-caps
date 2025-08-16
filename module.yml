@@ -2,3 +2,5 @@ name: zmk-feature-caps
 build:
   cmake: .
   kconfig: Kconfig
+  settings:
+  board_root: .
