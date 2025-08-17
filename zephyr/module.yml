@@ -1,0 +1,4 @@
+name: zmk-feature-caps
+build:
+  cmake: zephyr
+  kconfig: zephyr/Kconfig
