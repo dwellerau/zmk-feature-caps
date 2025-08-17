@@ -5,6 +5,13 @@
 #include <zmk/display/widgets/icon.h>
 #include <zmk/display/widgets/label.h>
 
+#ifdef CONFIG_ZMK_CAPS_WORD
+#include <zmk/events/caps_word_state_changed.h>
+#else
+// If someone forces this file to compile without Caps Word, fail loudly at compile-time
+#error "caps_status.c requires CONFIG_ZMK_CAPS_WORD (ZMK Caps Word feature)."
+#endif
+
 static struct zmk_widget_icon caps_icon;
 static struct zmk_widget_label caps_label;
 static lv_obj_t *widget_obj;
