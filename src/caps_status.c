@@ -1,7 +1,7 @@
 /*
  * zmk-feature-caps: Caps Lock / Caps Word status widget
  * Icons for very small displays; text for larger ones.
- * No dependency on ZMK display widget macros (explicit init function instead).
+ * Explicit init function (no ZMK display widget macros).
  */
 
 #include <lvgl.h>
@@ -9,6 +9,7 @@
 #include <zmk/display.h>
 #include <zmk/event_manager.h>
 #include <zmk/events/hid_indicators_changed.h>
+#include <zmk/hid.h> /* ZMK_HID_LED_CAPS_LOCK */
 
 /* Caps Word is optional: compile only if ZMK defines it AND the indicator option is enabled. */
 #if defined(CONFIG_ZMK_CAPS_WORD)
@@ -166,10 +167,11 @@ lv_obj_t *zmk_widget_caps_status_init(lv_obj_t *parent) {
 /* Event listeners                                                             */
 /* -------------------------------------------------------------------------- */
 
-static int hid_listener(const struct zmk_event_header *eh) {
+/* NOTE: ZMK expects const zmk_event_t * for as_* helpers */
+static int hid_listener(const zmk_event_t *eh) {
     const struct zmk_hid_indicators_changed *ev = as_zmk_hid_indicators_changed(eh);
     if (ev) {
-        caps_lock_on = (ev->indicators & HID_CAPS_LOCK);
+        caps_lock_on = (ev->indicators & ZMK_HID_LED_CAPS_LOCK);
         update_display();
     }
     return 0;
@@ -180,7 +182,7 @@ ZMK_LISTENER(caps_hid_status, hid_listener)
 ZMK_SUBSCRIPTION(caps_hid_status, zmk_hid_indicators_changed)
 
 #if defined(CONFIG_ZMK_CAPS_WORD) && IS_ENABLED(CONFIG_ZMK_FEATURE_CAPS_WORD_INDICATOR)
-static int caps_word_listener(const struct zmk_event_header *eh) {
+static int caps_word_listener(const zmk_event_t *eh) {
     const struct zmk_caps_word_state_changed *ev = as_zmk_caps_word_state_changed(eh);
     if (ev) {
         caps_word_on = ev->state;
