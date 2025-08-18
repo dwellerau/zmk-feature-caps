@@ -1,6 +1,7 @@
 /*
  * zmk-feature-caps: Caps Lock / Caps Word status widget
  * Icons for very small displays; text for larger ones.
+ * No dependency on ZMK display widget macros (explicit init function instead).
  */
 
 #include <lvgl.h>
@@ -9,8 +10,7 @@
 #include <zmk/event_manager.h>
 #include <zmk/events/hid_indicators_changed.h>
 
-/* Caps Word is optional: only compile if the base ZMK defines it AND the
- * module option to show a Caps Word indicator is enabled. */
+/* Caps Word is optional: compile only if ZMK defines it AND the indicator option is enabled. */
 #if defined(CONFIG_ZMK_CAPS_WORD)
 #include <zmk/events/caps_word_state_changed.h>
 #endif
@@ -19,9 +19,9 @@
 /* State                                                                      */
 /* -------------------------------------------------------------------------- */
 
-static lv_obj_t *widget_obj;      /* root object returned by init fn */
-static lv_obj_t *caps_canvas;     /* used for icon mode (small displays) */
-static lv_obj_t *caps_label;      /* used for text mode (larger displays) */
+static lv_obj_t *widget_obj;      /* root object created by init fn */
+static lv_obj_t *caps_canvas;     /* used in icon mode (small displays) */
+static lv_obj_t *caps_label;      /* used in text mode (larger displays) */
 
 static bool use_icons = true;
 static bool caps_lock_on = false;
@@ -67,11 +67,10 @@ static const uint16_t caps_word_bitmap[12] = {
 /* Icon rendering helpers (TRUE_COLOR canvas, 12x12)                          */
 /* -------------------------------------------------------------------------- */
 
-static lv_color_t icon_buf[12 * 12]; /* TRUE_COLOR; ZMK already uses TRUE_COLOR canvases */
+static lv_color_t icon_buf[12 * 12]; /* TRUE_COLOR buffer */
 
 static void icon_canvas_init(lv_obj_t *parent) {
     caps_canvas = lv_canvas_create(parent);
-    /* A 12x12 TRUE_COLOR canvas; ZMK/nice_view_plus also uses TRUE_COLOR for its canvases. */
     lv_canvas_set_buffer(caps_canvas, icon_buf, 12, 12, LV_IMG_CF_TRUE_COLOR);
     lv_obj_center(caps_canvas);
 }
@@ -85,13 +84,11 @@ static void icon_canvas_fill(lv_color_t color) {
 }
 
 static void icon_canvas_draw_bitmap(const uint16_t rows[12]) {
-    /* Draw white pixels on black background per 12-bit row. */
     icon_canvas_fill(lv_color_black());
     for (int y = 0; y < 12; y++) {
         uint16_t row = rows[y];
         for (int x = 0; x < 12; x++) {
-            bool on = (row >> (11 - x)) & 0x1;
-            if (on) {
+            if ((row >> (11 - x)) & 0x1) {
                 lv_canvas_set_px_color(caps_canvas, x, y, lv_color_white());
             }
         }
@@ -151,26 +148,19 @@ static void update_display(void) {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Widget init                                                                 */
+/* Public init (called from nice_view_plus/status.c)                           */
 /* -------------------------------------------------------------------------- */
 
-static void detect_mode(void) {
-    /* Decide icon vs text based on display vertical resolution (same logic you used) */
+lv_obj_t *zmk_widget_caps_status_init(lv_obj_t *parent) {
+    /* Decide icon vs text based on display height (<=32px => icon mode) */
     lv_disp_t *disp = lv_disp_get_default();
-    int h = lv_disp_get_ver_res(disp);
-    use_icons = (h <= 32);
+    use_icons = (lv_disp_get_ver_res(disp) <= 32);
 
-    /* Create the widget root container (returned by the generated init fn) */
-    widget_obj = lv_obj_create(lv_obj_get_parent(lv_scr_act())); /* parent set later by init fn */
-    /* The generated init fn will re-parent widget_obj appropriately for ZMK’s display manager. */
-
-    /* Child init is deferred to first update to ensure correct parent is set. */
+    widget_obj = lv_obj_create(parent);
+    /* Children (canvas/label) are created lazily on first update */
     update_display();
+    return widget_obj;
 }
-
-/* Register the widget: this generates `lv_obj_t *zmk_widget_caps_status_init(lv_obj_t *parent)` */
-ZMK_DISPLAY_WIDGET_LISTENER(caps_status, widget_obj, update_display)
-ZMK_DISPLAY_WIDGET_INIT_FN(caps_status, detect_mode)
 
 /* -------------------------------------------------------------------------- */
 /* Event listeners                                                             */
@@ -185,7 +175,7 @@ static int hid_listener(const struct zmk_event_header *eh) {
     return 0;
 }
 
-/* Use a unique listener name to avoid clashing with the widget listener symbol */
+/* Use a unique listener name to avoid clashing with other symbols */
 ZMK_LISTENER(caps_hid_status, hid_listener)
 ZMK_SUBSCRIPTION(caps_hid_status, zmk_hid_indicators_changed)
 
