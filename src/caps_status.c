@@ -9,7 +9,13 @@
 #include <zmk/display.h>
 #include <zmk/event_manager.h>
 #include <zmk/events/hid_indicators_changed.h>
-#include <zmk/hid.h> /* ZMK_HID_LED_CAPS_LOCK */
+#include <zmk/hid.h> /* ZMK_HID_LED_CAPS_LOCK or HID_KBD_LED_CAPS_LOCK */
+
+/* ---- Compatibility shim for different ZMK versions ---- */
+#ifndef ZMK_HID_LED_CAPS_LOCK
+#define ZMK_HID_LED_CAPS_LOCK HID_KBD_LED_CAPS_LOCK
+#endif
+/* ------------------------------------------------------- */
 
 /* Caps Word is optional: compile only if ZMK defines it AND the indicator option is enabled. */
 #if defined(CONFIG_ZMK_CAPS_WORD)
