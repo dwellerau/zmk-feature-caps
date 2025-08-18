@@ -8,14 +8,20 @@
 
 #include <zmk/display.h>
 #include <zmk/event_manager.h>
+
+/* HID indicators (Caps Lock LED from host) are optional in some builds. */
+#if IS_ENABLED(CONFIG_ZMK_HID_INDICATORS)
 #include <zmk/events/hid_indicators_changed.h>
 #include <zmk/hid.h> /* ZMK_HID_LED_CAPS_LOCK or HID_KBD_LED_CAPS_LOCK */
+#endif
 
-/* ---- Compatibility shim for different ZMK versions ---- */
+/* ---- Compatibility shim for different ZMK versions of the CAPS LED bit ---- */
+#if IS_ENABLED(CONFIG_ZMK_HID_INDICATORS)
 #ifndef ZMK_HID_LED_CAPS_LOCK
 #define ZMK_HID_LED_CAPS_LOCK HID_KBD_LED_CAPS_LOCK
 #endif
-/* ------------------------------------------------------- */
+#endif
+/* -------------------------------------------------------------------------- */
 
 /* Caps Word is optional: compile only if ZMK defines it AND the indicator option is enabled. */
 #if defined(CONFIG_ZMK_CAPS_WORD)
@@ -174,6 +180,8 @@ lv_obj_t *zmk_widget_caps_status_init(lv_obj_t *parent) {
 /* -------------------------------------------------------------------------- */
 
 /* NOTE: ZMK expects const zmk_event_t * for as_* helpers */
+
+#if IS_ENABLED(CONFIG_ZMK_HID_INDICATORS)
 static int hid_listener(const zmk_event_t *eh) {
     const struct zmk_hid_indicators_changed *ev = as_zmk_hid_indicators_changed(eh);
     if (ev) {
@@ -182,10 +190,9 @@ static int hid_listener(const zmk_event_t *eh) {
     }
     return 0;
 }
-
-/* Use a unique listener name to avoid clashing with other symbols */
 ZMK_LISTENER(caps_hid_status, hid_listener)
 ZMK_SUBSCRIPTION(caps_hid_status, zmk_hid_indicators_changed)
+#endif /* CONFIG_ZMK_HID_INDICATORS */
 
 #if defined(CONFIG_ZMK_CAPS_WORD) && IS_ENABLED(CONFIG_ZMK_FEATURE_CAPS_WORD_INDICATOR)
 static int caps_word_listener(const zmk_event_t *eh) {
