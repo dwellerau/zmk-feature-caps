@@ -1,6 +1,5 @@
 config ZMK_FEATURE_CAPS_WORD_INDICATOR
     bool "Enable Caps Word indicator from zmk-feature-caps"
-    depends on ZMK_CAPS_WORD
     default y
     help
       Build Caps Word event listener only when ZMK's Caps Word is available.
