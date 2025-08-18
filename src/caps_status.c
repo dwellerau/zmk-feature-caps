@@ -1,15 +1,13 @@
 #include <zmk/event_manager.h>
 #include <zmk/events/hid_indicators_changed.h>
-#include <zmk/events/caps_word_state_changed.h>
 #include <zmk/display.h>
 #include <zmk/display/widgets/icon.h>
 #include <zmk/display/widgets/label.h>
 
-#ifdef CONFIG_ZMK_CAPS_WORD
+/* Caps Word is optional: only include and subscribe if the symbol exists
+ * AND the module's indicator option is enabled. We do NOT hard-require it. */
+#if defined(CONFIG_ZMK_CAPS_WORD)
 #include <zmk/events/caps_word_state_changed.h>
-#else
-// If someone forces this file to compile without Caps Word, fail loudly at compile-time
-#error "caps_status.c requires CONFIG_ZMK_CAPS_WORD (ZMK Caps Word feature)."
 #endif
 
 static struct zmk_widget_icon caps_icon;
@@ -17,10 +15,14 @@ static struct zmk_widget_label caps_label;
 static lv_obj_t *widget_obj;
 
 static bool caps_lock_on = false;
+
+#if defined(CONFIG_ZMK_CAPS_WORD) && IS_ENABLED(CONFIG_ZMK_FEATURE_CAPS_WORD_INDICATOR)
 static bool caps_word_on = false;
+#endif
+
 static bool use_icons = true;
 
-// 12×12 icons
+/* 12×12 icons */
 static const uint8_t caps_lock_bitmap[] = {
     0b000111111000,
     0b001000000100,
@@ -36,6 +38,7 @@ static const uint8_t caps_lock_bitmap[] = {
     0b000000000000
 };
 
+#if defined(CONFIG_ZMK_CAPS_WORD) && IS_ENABLED(CONFIG_ZMK_FEATURE_CAPS_WORD_INDICATOR)
 static const uint8_t caps_word_bitmap[] = {
     0b111111111111,
     0b101100111110,
@@ -50,6 +53,7 @@ static const uint8_t caps_word_bitmap[] = {
     0b100000001110,
     0b111111111111
 };
+#endif
 
 static const uint8_t empty_bitmap[] = {
     0b000000000000,
@@ -66,27 +70,31 @@ static const uint8_t empty_bitmap[] = {
     0b000000000000
 };
 
-static void update_display() {
+static void update_display(void) {
     if (use_icons) {
         if (caps_lock_on) {
             zmk_widget_icon_set_bitmap(&caps_icon, caps_lock_bitmap, 12, 12);
+#if defined(CONFIG_ZMK_CAPS_WORD) && IS_ENABLED(CONFIG_ZMK_FEATURE_CAPS_WORD_INDICATOR)
         } else if (caps_word_on) {
             zmk_widget_icon_set_bitmap(&caps_icon, caps_word_bitmap, 12, 12);
+#endif
         } else {
             zmk_widget_icon_set_bitmap(&caps_icon, empty_bitmap, 12, 12);
         }
     } else {
         if (caps_lock_on) {
             zmk_widget_label_set_text(&caps_label, "CAPS LOCK");
+#if defined(CONFIG_ZMK_CAPS_WORD) && IS_ENABLED(CONFIG_ZMK_FEATURE_CAPS_WORD_INDICATOR)
         } else if (caps_word_on) {
             zmk_widget_label_set_text(&caps_label, "CAPS WORD");
+#endif
         } else {
             zmk_widget_label_set_text(&caps_label, "");
         }
     }
 }
 
-static void detect_mode() {
+static void detect_mode(void) {
     lv_disp_t *disp = lv_disp_get_default();
     int height = lv_disp_get_ver_res(disp);
 
@@ -102,6 +110,7 @@ static void detect_mode() {
 ZMK_DISPLAY_WIDGET_LISTENER(caps_status, widget_obj, update_display)
 ZMK_DISPLAY_WIDGET_INIT_FN(caps_status, detect_mode)
 
+/* HID Caps Lock LED -> caps_lock_on */
 static int hid_listener(const struct zmk_event_header *eh) {
     const struct zmk_hid_indicators_changed *ev = as_zmk_hid_indicators_changed(eh);
     if (ev) {
@@ -111,6 +120,12 @@ static int hid_listener(const struct zmk_event_header *eh) {
     return 0;
 }
 
+/* Use a unique listener name to avoid clashing with the widget listener */
+ZMK_LISTENER(caps_hid_status, hid_listener)
+ZMK_SUBSCRIPTION(caps_hid_status, zmk_hid_indicators_changed)
+
+/* Caps Word -> caps_word_on (only compiled if ZMK exposes it and the indicator option is on) */
+#if defined(CONFIG_ZMK_CAPS_WORD) && IS_ENABLED(CONFIG_ZMK_FEATURE_CAPS_WORD_INDICATOR)
 static int caps_word_listener(const struct zmk_event_header *eh) {
     const struct zmk_caps_word_state_changed *ev = as_zmk_caps_word_state_changed(eh);
     if (ev) {
@@ -119,10 +134,6 @@ static int caps_word_listener(const struct zmk_event_header *eh) {
     }
     return 0;
 }
-
-/* Renamed listener symbol to avoid any collision with the widget symbol */
-ZMK_LISTENER(caps_hid_status, hid_listener)
-ZMK_SUBSCRIPTION(caps_hid_status, zmk_hid_indicators_changed)
-
 ZMK_LISTENER(caps_word_status, caps_word_listener)
 ZMK_SUBSCRIPTION(caps_word_status, zmk_caps_word_state_changed)
+#endif
