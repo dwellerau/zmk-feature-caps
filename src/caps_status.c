@@ -120,8 +120,9 @@ static int caps_word_listener(const struct zmk_event_header *eh) {
     return 0;
 }
 
-ZMK_LISTENER(caps_status, hid_listener)
-ZMK_SUBSCRIPTION(caps_status, zmk_hid_indicators_changed)
+/* Renamed to avoid clashing with the widget listener symbol generated above */
+ZMK_LISTENER(caps_hid_status, hid_listener)
+ZMK_SUBSCRIPTION(caps_hid_status, zmk_hid_indicators_changed)
 
 ZMK_LISTENER(caps_word_status, caps_word_listener)
 ZMK_SUBSCRIPTION(caps_word_status, zmk_caps_word_state_changed)
