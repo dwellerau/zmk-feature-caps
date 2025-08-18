@@ -1,5 +1,18 @@
+# zmk-feature-caps /zephyr/Kconfig
+
 config ZMK_FEATURE_CAPS_WORD_INDICATOR
     bool "Enable Caps Word indicator from zmk-feature-caps"
+    depends on ZMK_DISPLAY        # only build when LVGL display is enabled
+    depends on ZMK_CAPS_WORD      # only show/compile the Caps Word part when Caps Word exists
     default y
     help
-      Build Caps Word event listener only when ZMK's Caps Word is available.
+      Builds the Caps status widget that can show:
+        - Caps Lock (from HID indicators), and
+        - Caps Word state (from ZMK Caps Word), if available.
+
+      This option is presented only when:
+        * ZMK_DISPLAY is enabled (LVGL present), and
+        * ZMK_CAPS_WORD is enabled (for the Caps Word indicator).
+
+      If HID indicators are not enabled in your ZMK build, the widget still
+      compiles, but only the Caps Word portion will update.
