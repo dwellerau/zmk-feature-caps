@@ -23,8 +23,8 @@
 #endif
 /* -------------------------------------------------------------------------- */
 
-/* Caps Word is optional: compile only if ZMK defines it AND the indicator option is enabled. */
-#if defined(CONFIG_ZMK_CAPS_WORD)
+/* Caps Word is optional: compile only if ZMK behavior is enabled. */
+#if defined(CONFIG_ZMK_BEHAVIOR_CAPS_WORD)
 #include <zmk/events/caps_word_state_changed.h>
 #endif
 
@@ -39,7 +39,7 @@ static lv_obj_t *caps_label;      /* used in text mode (larger displays) */
 static bool use_icons = true;
 static bool caps_lock_on = false;
 
-#if defined(CONFIG_ZMK_CAPS_WORD) && IS_ENABLED(CONFIG_ZMK_FEATURE_CAPS_WORD_INDICATOR)
+#if defined(CONFIG_ZMK_BEHAVIOR_CAPS_WORD) && IS_ENABLED(CONFIG_ZMK_FEATURE_CAPS_WORD_INDICATOR)
 static bool caps_word_on = false;
 #endif
 
@@ -75,7 +75,7 @@ static const uint16_t caps_outline_bitmap[12] = {
     0b000000000000
 };
 
-#if defined(CONFIG_ZMK_CAPS_WORD) && IS_ENABLED(CONFIG_ZMK_FEATURE_CAPS_WORD_INDICATOR)
+#if defined(CONFIG_ZMK_BEHAVIOR_CAPS_WORD) && IS_ENABLED(CONFIG_ZMK_FEATURE_CAPS_WORD_INDICATOR)
 static const uint16_t caps_word_bitmap[12] = {
     0b111111111111,
     0b101100111110,
@@ -153,7 +153,7 @@ static void update_display(void) {
         /* Choose which icon to show; draw outline when inactive so it's visible */
         if (caps_lock_on) {
             icon_canvas_draw_bitmap(caps_lock_bitmap);
-#if defined(CONFIG_ZMK_CAPS_WORD) && IS_ENABLED(CONFIG_ZMK_FEATURE_CAPS_WORD_INDICATOR)
+#if defined(CONFIG_ZMK_BEHAVIOR_CAPS_WORD) && IS_ENABLED(CONFIG_ZMK_FEATURE_CAPS_WORD_INDICATOR)
         } else if (caps_word_on) {
             icon_canvas_draw_bitmap(caps_word_bitmap);
 #endif
@@ -166,7 +166,7 @@ static void update_display(void) {
         }
         if (caps_lock_on) {
             label_set_text_cstr("CAPS LOCK");
-#if defined(CONFIG_ZMK_CAPS_WORD) && IS_ENABLED(CONFIG_ZMK_FEATURE_CAPS_WORD_INDICATOR)
+#if defined(CONFIG_ZMK_BEHAVIOR_CAPS_WORD) && IS_ENABLED(CONFIG_ZMK_FEATURE_CAPS_WORD_INDICATOR)
         } else if (caps_word_on) {
             label_set_text_cstr("CAPS WORD");
 #endif
@@ -215,7 +215,7 @@ ZMK_LISTENER(caps_hid_status, hid_listener)
 ZMK_SUBSCRIPTION(caps_hid_status, zmk_hid_indicators_changed)
 #endif /* CONFIG_ZMK_HID_INDICATORS */
 
-#if defined(CONFIG_ZMK_CAPS_WORD) && IS_ENABLED(CONFIG_ZMK_FEATURE_CAPS_WORD_INDICATOR)
+#if defined(CONFIG_ZMK_BEHAVIOR_CAPS_WORD) && IS_ENABLED(CONFIG_ZMK_FEATURE_CAPS_WORD_INDICATOR)
 static int caps_word_listener(const zmk_event_t *eh) {
     const struct zmk_caps_word_state_changed *ev = as_zmk_caps_word_state_changed(eh);
     if (ev) {
