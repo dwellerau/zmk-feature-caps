@@ -3,6 +3,7 @@
 config ZMK_FEATURE_CAPS_WORD_INDICATOR
     bool "Enable Caps Word indicator from zmk-feature-caps"
     depends on ZMK_DISPLAY        # only build when LVGL display is enabled
+    depends on ZMK_BEHAVIOR_CAPS_WORD
     #depends on ZMK_CAPS_WORD      # only show/compile the Caps Word part when Caps Word exists
     default y
     help
