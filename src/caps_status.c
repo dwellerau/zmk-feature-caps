@@ -59,6 +59,22 @@ static const uint16_t caps_lock_bitmap[12] = {
     0b000000000000
 };
 
+/* Outline/“off” bitmap so the widget is visible even when inactive */
+static const uint16_t caps_outline_bitmap[12] = {
+    0b000111111000,
+    0b001000000100,
+    0b010000000010,
+    0b010000000010,
+    0b010000000010,
+    0b010000000010,
+    0b010000000010,
+    0b010000000010,
+    0b010000000010,
+    0b001000000100,
+    0b000111111000,
+    0b000000000000
+};
+
 #if defined(CONFIG_ZMK_CAPS_WORD) && IS_ENABLED(CONFIG_ZMK_FEATURE_CAPS_WORD_INDICATOR)
 static const uint16_t caps_word_bitmap[12] = {
     0b111111111111,
@@ -134,7 +150,7 @@ static void update_display(void) {
         if (!caps_canvas) {
             icon_canvas_init(widget_obj);
         }
-        /* Choose which icon to show, or clear if none active */
+        /* Choose which icon to show; draw outline when inactive so it's visible */
         if (caps_lock_on) {
             icon_canvas_draw_bitmap(caps_lock_bitmap);
 #if defined(CONFIG_ZMK_CAPS_WORD) && IS_ENABLED(CONFIG_ZMK_FEATURE_CAPS_WORD_INDICATOR)
@@ -142,7 +158,7 @@ static void update_display(void) {
             icon_canvas_draw_bitmap(caps_word_bitmap);
 #endif
         } else {
-            icon_canvas_fill(lv_color_black());
+            icon_canvas_draw_bitmap(caps_outline_bitmap);
         }
     } else {
         if (!caps_label) {
@@ -155,7 +171,7 @@ static void update_display(void) {
             label_set_text_cstr("CAPS WORD");
 #endif
         } else {
-            label_set_text_cstr("");
+            label_set_text_cstr("caps");
         }
     }
 }
@@ -170,7 +186,14 @@ lv_obj_t *zmk_widget_caps_status_init(lv_obj_t *parent) {
     use_icons = (lv_disp_get_ver_res(disp) <= 32);
 
     widget_obj = lv_obj_create(parent);
-    /* Children (canvas/label) are created lazily on first update */
+
+    /* Transparent root so it overlays the canvas cleanly; bring to front */
+    lv_obj_set_style_bg_opa(widget_obj, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_opa(widget_obj, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_pad_all(widget_obj, 0, 0);
+    lv_obj_move_foreground(widget_obj);
+
+    /* Draw once now (children created lazily) */
     update_display();
     return widget_obj;
 }
@@ -178,8 +201,6 @@ lv_obj_t *zmk_widget_caps_status_init(lv_obj_t *parent) {
 /* -------------------------------------------------------------------------- */
 /* Event listeners                                                             */
 /* -------------------------------------------------------------------------- */
-
-/* NOTE: ZMK expects const zmk_event_t * for as_* helpers */
 
 #if IS_ENABLED(CONFIG_ZMK_HID_INDICATORS)
 static int hid_listener(const zmk_event_t *eh) {
