@@ -183,7 +183,8 @@ static void update_display(void) {
 lv_obj_t *zmk_widget_caps_status_init(lv_obj_t *parent) {
     /* Decide icon vs text based on display height (<=32px => icon mode) */
     lv_disp_t *disp = lv_disp_get_default();
-    use_icons = (lv_disp_get_ver_res(disp) <= 32);
+    //use_icons = (lv_disp_get_ver_res(disp) <= 32);
+    use_icons = true;
 
     widget_obj = lv_obj_create(parent);
 
